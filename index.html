@@ -2,18 +2,54 @@
 <html lang="he" dir="rtl">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>students-apps</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body class="bg-gradient-to-br from-indigo-100 to-white min-h-screen flex items-center justify-center">
-    <div class="max-w-xl mx-auto p-8 bg-white rounded-2xl shadow-xl border border-indigo-200 text-center">
-      <h1 class="text-4xl font-bold text-indigo-600 mb-4">ברוכים הבאים 🎉</h1>
-      <p class="text-gray-700 text-lg mb-6">
-        זהו הבית לכל המשחקים, היצירות והאפליקציות שתלמידים יצרו בשיעורים עם צוריאל 🎮✨
-      </p>
-      <a href="https://zurielyahav.com" target="_blank" class="inline-block bg-indigo-500 hover:bg-indigo-600 text-white text-lg font-medium py-2 px-4 rounded-xl transition">
-        לאתר הראשי
-      </a>
+  <body class="bg-gradient-to-br from-indigo-100 to-white min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl mx-auto">
+      <!-- Welcome Section -->
+      <div class="p-8 lg:p-10 bg-white rounded-2xl shadow-xl border border-indigo-200 text-center mb-8">
+        <h1 class="text-4xl font-bold text-indigo-600 mb-4">ברוכים הבאים 🎉</h1>
+        <p class="text-gray-700 text-lg mb-6">
+          זהו הבית לכל המשחקים, היצירות והאפליקציות שתלמידים יצרו בשיעורים עם צוריאל 🎮✨
+        </p>
+        <a href="https://zurielyahav.com" target="_blank" class="inline-block bg-indigo-500 hover:bg-indigo-600 text-white text-lg font-medium py-2 px-4 rounded-xl transition-transform transform hover:scale-105">
+          לאתר הראשי
+        </a>
+      </div>
+
+      <!-- Upload Form Section -->
+      <div class="p-8 lg:p-10 bg-white rounded-2xl shadow-xl border border-indigo-200">
+        <h2 class="text-3xl font-bold text-indigo-600 mb-6 text-center">מעלים משחק חדש!</h2>
+        <!-- 
+          The form below submits data to the n8n webhook.
+          The action URL is constructed from your n8n instance and the webhook ID from your workflow.
+          Webhook ID: 5a8b9879-d300-4e4a-a948-4458d792decc
+        -->
+        <form action="https://m8n.zurielyahav.com/webhook/5a8b9879-d300-4e4a-a948-4458d792decc" method="POST" enctype="multipart/form-data" class="space-y-6">
+          <div>
+            <label for="email" class="block text-lg font-medium text-gray-800 mb-2">אימייל</label>
+            <input type="email" id="email" name="email" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="love@gmail.com" required>
+          </div>
+          
+          <div>
+            <label for="file" class="block text-lg font-medium text-gray-800 mb-2">קובץ המשחק (index.html)</label>
+            <input type="file" id="file" name="file" class="w-full text-gray-700 bg-gray-50 border border-gray-300 rounded-xl cursor-pointer
+              file:mr-4 file:py-3 file:px-5
+              file:rounded-xl file:border-0
+              file:text-sm file:font-semibold
+              file:bg-indigo-100 file:text-indigo-700
+              hover:file:bg-indigo-200 transition" accept=".html" required>
+          </div>
+          
+          <div class="text-center pt-4">
+            <button type="submit" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white text-lg font-bold py-3 px-8 rounded-xl transition-transform transform hover:scale-105">
+              שליחה והעלאה
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </body>
 </html>
