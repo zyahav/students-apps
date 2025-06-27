@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>משחק התאמת אותיות לילדים</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Varela+Round&display=swap');
+    body {
+      font-family: 'Varela Round', sans-serif;
+      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      background-attachment: fixed;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .dragging {
+      opacity: 0.7;
+      transform: scale(1.05);
+    }
+    .drag-over {
+      background-color: #e0f2fe;
+      border-color: #3b82f6;
+    }
+    .matched {
+      background-color: #10b981 !important;
+      color: white !important;
+      border-color: #10b981 !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-box text-center bg-white/80 p-6 rounded-xl shadow-md mb-6">
+    <h1 class="text-3xl font-bold">🎯 משחק התאמת אותיות 🎯</h1>
+    <p class="text-lg mt-2">גרור את האות למילה המתאימה!</p>
+  </div>
+
+  <div id="game-area" class="w-full max-w-4xl"></div>
+
+  <script>
+    const stages = [
+      [
+        { letter: "א", name: "אלף" },
+        { letter: "ב", name: "בית" },
+        { letter: "ג", name: "גימל" },
+        { letter: "ד", name: "דלת" }
+      ],
+      [
+        { letter: "ה", name: "הא" },
+        { letter: "ו", name: "ויו" },
+        { letter: "ז", name: "זין" },
+        { letter: "ח", name: "חית" }
+      ]
+    ];
+
+    let currentStage = 0;
+
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function renderStage(stageData) {
+      const gameArea = document.getElementById('game-area');
+      gameArea.innerHTML = '';
+
+      const targetsContainer = document.createElement('div');
+      targetsContainer.className = "grid grid-cols-2 gap-8 bg-white p-6 rounded-xl shadow-lg mb-10";
+      stageData.forEach(pair => {
+        const target = document.createElement('div');
+        target.id = `target-${pair.letter}`;
+        target.className = "w-full h-28 flex flex-col items-center justify-center border-4 border-dashed border-gray-400 rounded-xl text-xl font-bold name-card";
+        target.dataset.letter = pair.letter;
+        target.innerHTML = `<div>${pair.name}</div><div class='text-4xl mt-1 drop-slot'></div>`;
+        targetsContainer.appendChild(target);
+      });
+
+      const lettersContainer = document.createElement('div');
+      lettersContainer.className = "flex flex-wrap justify-center gap-4";
+      shuffle(stageData).forEach(pair => {
+        const letter = document.createElement('div');
+        letter.id = `letter-${pair.letter}`;
+        letter.className = "w-24 h-24 flex items-center justify-center bg-purple-600 text-white text-4xl font-bold rounded-xl letter-card cursor-grab";
+        letter.draggable = true;
+        letter.textContent = pair.letter;
+        lettersContainer.appendChild(letter);
+      });
+
+      gameArea.appendChild(targetsContainer);
+      gameArea.appendChild(lettersContainer);
+
+      setupDragDrop(stageData);
+    }
+
+    function setupDragDrop(stageData) {
+      const letters = document.querySelectorAll('.letter-card');
+      const targets = document.querySelectorAll('.name-card');
+      let matches = 0;
+
+      letters.forEach(letter => {
+        letter.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', e.target.id);
+          setTimeout(() => {
+            e.target.style.visibility = 'hidden';
+          }, 0);
+        });
+
+        letter.addEventListener('dragend', (e) => {
+          e.target.style.visibility = 'visible';
+          e.target.classList.remove('dragging');
+        });
+      });
+
+      targets.forEach(target => {
+        const slot = target.querySelector('.drop-slot');
+        target.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          target.classList.add('drag-over');
+        });
+
+        target.addEventListener('dragleave', () => {
+          target.classList.remove('drag-over');
+        });
+
+        target.addEventListener('drop', (e) => {
+          e.preventDefault();
+          target.classList.remove('drag-over');
+          const sourceId = e.dataTransfer.getData('text/plain');
+          const dragged = document.getElementById(sourceId);
+          const draggedLetter = dragged.textContent.trim();
+          const expected = target.dataset.letter;
+
+          if (draggedLetter === expected) {
+            target.classList.add('matched');
+            dragged.remove();
+            slot.textContent = draggedLetter;
+            matches++;
+            if (matches === stageData.length) {
+              setTimeout(() => {
+                currentStage++;
+                if (currentStage < stages.length) {
+                  renderStage(stages[currentStage]);
+                } else {
+                  alert('כל הכבוד! סיימת את כל השלבים! 🎉');
+                }
+              }, 600);
+            }
+          } else {
+            alert('לא נכון, נסה שוב!');
+          }
+        });
+      });
+    }
+
+    renderStage(stages[currentStage]);
+  </script>
+</body>
+</html>
