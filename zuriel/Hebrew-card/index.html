@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>משחק גרור ושחרר אותיות</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+        }
+        /* Custom styles for drag-and-drop feedback */
+        .letter.opacity-50 {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+        .box.drag-over {
+            border-color: #3b82f6; /* Blue border on drag over */
+            background-color: #eff6ff; /* Lighter blue background on drag over */
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+
+    <div id="game-container" class="bg-white rounded-xl shadow-2xl p-8 max-w-4xl w-full">
+        <h1 class="text-4xl font-extrabold text-blue-800 mb-10 leading-tight">
+            גרור את האות לקופסה הנכונה!
+        </h1>
+
+        <div id="letters-container" class="grid grid-cols-2 sm:grid-cols-2 gap-4 mb-10 min-h-[80px] justify-items-center items-center">
+            <!-- Draggable Hebrew letters will be inserted here by JavaScript -->
+        </div>
+
+        <div id="boxes-container" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <!-- Droppable boxes for letter names will be inserted here by JavaScript -->
+        </div>
+
+        <p id="message-box" class="mt-8 text-lg font-semibold text-gray-700"></p>
+    </div>
+
+    <script>
+        // Array of Hebrew letters and their full names
+        const lettersData = [
+            { letter: 'א', name: 'אלף' },
+            { letter: 'ב', name: 'בית' },
+            { letter: 'ג', name: 'גימל' },
+            { letter: 'ד', name: 'דלת' },
+            { letter: 'ה', name: 'הא' },
+            { letter: 'ו', name: 'ויו' },
+            { letter: 'ז', name: 'זין' },
+            { letter: 'ח', name: 'חית' },
+            { letter: 'ט', name: 'טית' },
+            { letter: 'י', name: 'יוד' },
+        ];
+
+        // Shuffle the letters and boxes to make the game dynamic each time
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        shuffleArray(lettersData); // Shuffle the order of letters for display
+
+        const lettersContainer = document.getElementById('letters-container');
+        const boxesContainer = document.getElementById('boxes-container');
+        const messageBox = document.getElementById('message-box');
+
+        let draggedItem = null; // Stores the currently dragged DOM element
+
+        // Function to initialize the game elements
+        function initializeGame() {
+            // Clear existing elements if re-initializing
+            lettersContainer.innerHTML = '';
+            boxesContainer.innerHTML = '';
+            messageBox.textContent = '';
+
+            // Create draggable letter elements
+            lettersData.forEach((data, index) => {
+                const letterEl = document.createElement('div');
+                letterEl.id = `letter-${data.name}`; // Unique ID for each letter (e.g., letter-aleph)
+                letterEl.classList.add(
+                    'letter', 'cursor-grab', 'p-3', 'rounded-lg', 'bg-blue-600',
+                    'text-white', 'text-4xl', 'font-extrabold', 'shadow-xl',
+                    'transform', 'transition-all', 'duration-200', 'hover:scale-105',
+                    'w-28', 'h-28', 'flex', 'items-center', 'justify-center' /* Added for centering */
+                );
+                letterEl.textContent = data.letter;
+                letterEl.draggable = true;
+                letterEl.dataset.letter = data.letter; // Store the letter itself
+                letterEl.dataset.name = data.name;   // Store the full name for matching
+
+                // Store original position (parent's ID and index within that parent)
+                letterEl.dataset.originalParentId = lettersContainer.id;
+                letterEl.dataset.originalIndex = index; // Store initial index
+
+                lettersContainer.appendChild(letterEl);
+            });
+
+            // Create droppable box elements (shuffled separately to mismatch with letter order)
+            const shuffledBoxesData = [...lettersData]; // Create a copy to shuffle independently
+            shuffleArray(shuffledBoxesData);
+
+            shuffledBoxesData.forEach(data => {
+                const boxEl = document.createElement('div');
+                boxEl.id = `box-${data.name}`; // Unique ID for each box (e.g., box-aleph)
+                boxEl.classList.add(
+                    'box', 'flex', 'flex-col', 'items-center', 'justify-center',
+                    'w-full', 'h-28', 'border-4', 'border-dashed', 'border-gray-400',
+                    'rounded-lg', 'bg-gray-50', 'text-xl', 'text-gray-700', /* Reduced text size */
+                    'font-semibold', 'p-2', 'transition-all', 'duration-200' /* Reduced padding */
+                );
+                boxEl.textContent = `קופסת ${data.name}`; // "Box of [name]"
+                boxEl.dataset.targetName = data.name; // Store the target name for matching
+
+                boxesContainer.appendChild(boxEl);
+            });
+        }
+
+        // --- Drag and Drop Event Listeners ---
+
+        document.addEventListener('dragstart', (e) => {
+            // Check if the dragged element is a 'letter'
+            if (e.target.classList.contains('letter') && !e.target.dataset.matched) {
+                draggedItem = e.target;
+                // Set data to be transferred (ID of the dragged element)
+                e.dataTransfer.setData('text/plain', draggedItem.id);
+                // Set the allowed drag effect (e.g., 'move', 'copy', 'link')
+                e.dataTransfer.effectAllowed = 'move';
+                // Add a class for visual feedback during drag
+                draggedItem.classList.add('opacity-50');
+                messageBox.textContent = ''; // Clear any previous messages
+            } else {
+                e.preventDefault(); // Prevent dragging if already matched or not a letter
+            }
+        });
+
+        document.addEventListener('dragover', (e) => {
+            // Prevent default behavior to allow dropping
+            e.preventDefault();
+            // Add visual feedback to the droppable target
+            let dropTarget = e.target;
+            while (dropTarget && !dropTarget.classList.contains('box') && dropTarget !== document.body) {
+                dropTarget = dropTarget.parentNode;
+            }
+            if (dropTarget && dropTarget.classList.contains('box')) {
+                dropTarget.classList.add('drag-over');
+                e.dataTransfer.dropEffect = 'move'; // Show 'move' cursor
+            }
+        });
+
+        document.addEventListener('dragleave', (e) => {
+            // Remove visual feedback from the droppable target
+            let dropTarget = e.target;
+            while (dropTarget && !dropTarget.classList.contains('box') && dropTarget !== document.body) {
+                dropTarget = dropTarget.parentNode;
+            }
+            if (dropTarget && dropTarget.classList.contains('box')) {
+                dropTarget.classList.remove('drag-over');
+            }
+        });
+
+        document.addEventListener('drop', (e) => {
+            e.preventDefault(); // Prevent default browser drop behavior
+
+            // Remove drag-over visual feedback immediately
+            let dropTarget = e.target;
+            while (dropTarget && !dropTarget.classList.contains('box') && dropTarget !== document.body) {
+                dropTarget = dropTarget.parentNode;
+            }
+
+            if (dropTarget && dropTarget.classList.contains('box')) {
+                dropTarget.classList.remove('drag-over');
+
+                if (draggedItem) {
+                    const draggedLetterName = draggedItem.dataset.name;
+                    const targetBoxName = dropTarget.dataset.targetName;
+
+                    if (draggedLetterName === targetBoxName) {
+                        // Correct match!
+                        dropTarget.appendChild(draggedItem); // Move the actual DOM element
+                        draggedItem.dataset.matched = 'true'; // Mark as successfully matched
+                        draggedItem.classList.remove(
+                            'opacity-50', 'cursor-grab', 'bg-blue-600', 'w-28', 'h-28', 'p-3', 'text-4xl'
+                        );
+                        draggedItem.classList.add(
+                            'bg-green-500', 'cursor-auto', 'w-20', 'h-20', 'text-3xl' /* Adjusted size/text */
+                        );
+                        draggedItem.draggable = false; // Make it non-draggable once placed
+                        draggedItem.style.position = ''; // Remove any inline positioning
+                        draggedItem.style.left = '';
+                        draggedItem.style.top = '';
+                        draggedItem.style.zIndex = '';
+
+                        // Update box styling and content
+                        dropTarget.classList.remove('border-dashed', 'border-gray-400', 'bg-gray-50');
+                        dropTarget.classList.add('bg-green-100', 'border-green-500', 'shadow-inner');
+                        dropTarget.innerHTML = `
+                            <span class="text-base text-gray-700 font-semibold">קופסת ${targetBoxName}</span>
+                            <span class="text-4xl font-extrabold text-green-700 mt-1">${draggedLetterName.charAt(0)}</span>
+                        `;
+                        // Re-append the dragged item after updating innerHTML to ensure it's still there
+                        // For simplicity, we just put the letter's first char as text content, and make the dropped element invisible
+                        draggedItem.style.display = 'none'; // Hide the original dragged element
+
+                        messageBox.textContent = 'כל הכבוד! התאמה נכונה!';
+                        messageBox.classList.remove('text-red-600');
+                        messageBox.classList.add('text-green-600');
+
+                        // Check if all letters are matched
+                        const allLetters = document.querySelectorAll('.letter');
+                        const matchedLetters = document.querySelectorAll('.letter[data-matched="true"]');
+                        if (allLetters.length === matchedLetters.length) {
+                            setTimeout(() => {
+                                messageBox.textContent = 'כל הכבוד! סיימת את המשחק!';
+                                messageBox.classList.remove('text-green-600');
+                                messageBox.classList.add('text-purple-600');
+                            }, 500);
+                        }
+
+                    } else {
+                        // Incorrect match - the dragend event will handle returning the letter
+                        messageBox.textContent = 'טעות! נסה שוב.';
+                        messageBox.classList.remove('text-green-600');
+                        messageBox.classList.add('text-red-600');
+                    }
+                }
+            }
+        });
+
+        document.addEventListener('dragend', (e) => {
+            if (draggedItem) {
+                // Always remove the opacity feedback
+                draggedItem.classList.remove('opacity-50');
+
+                // If the item was not successfully matched and moved to a target box
+                if (draggedItem.dataset.matched !== 'true') {
+                    // Find the original parent container
+                    const originalParent = document.getElementById(draggedItem.dataset.originalParentId);
+                    const originalIndex = parseInt(draggedItem.dataset.originalIndex);
+
+                    // Re-insert the item into its original position in the original container
+                    // This logic ensures it goes back to its original slot in the grid
+                    if (originalParent) {
+                        const referenceChild = originalParent.children[originalIndex];
+                        if (referenceChild) {
+                            originalParent.insertBefore(draggedItem, referenceChild);
+                        } else {
+                            originalParent.appendChild(draggedItem);
+                        }
+                    }
+                }
+                draggedItem = null; // Clear the dragged item reference
+            }
+        });
+
+        // Initialize the game when the window loads
+        window.onload = initializeGame;
+    </script>
+</body>
+</html>
